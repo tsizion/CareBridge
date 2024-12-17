@@ -15,9 +15,17 @@ const studentNeedSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Goal amount is required"],
     },
+    raisedAmount: {
+      type: Number,
+      default: 0,
+    },
     description: {
       type: String,
       required: [true, "Description of the need is required"],
+    },
+    studentPhotos: {
+      type: [String], // This allows multiple image URLs or paths
+      default: [],
     },
     status: {
       type: String,

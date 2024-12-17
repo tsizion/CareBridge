@@ -79,3 +79,31 @@ exports.LoginAdmin = catchAsync(async (req, res, next) => {
     return next(new AppError("Incorrect phone number or password.", 403));
   }
 });
+exports.googleLogin = catchAsync(async (req, res, next) => {
+  const { email, googleId } = req.body;
+
+  if (!email || !googleId) {
+    return next(new AppError("Invalid Google login data.", 400));
+  }
+
+  // Check if user exists in the database
+  const user = await User.findOne({ "email.address": email, googleId });
+
+  if (!user) {
+    return next(
+      new AppError(
+        "No account found for this Google account. Please sign up manually.",
+        404
+      )
+    );
+  }
+
+  // Generate JWT token
+  const token = authUtils.signToken(user._id);
+
+  res.status(200).json({
+    status: "success",
+    token,
+    user,
+  });
+});

@@ -23,6 +23,15 @@ connectDB();
 app.use("/api/v1/donor", require("./donors/routers/donorRoutes"));
 app.use("/api/v1/user", require("./campaign creators,/routers/userRouter"));
 app.use("/api/v1/category", require("./Campaign/routers/categoryRouters"));
+app.use(
+  "/api/v1/student",
+  require("./campaign creators,/routers/studentRouter")
+);
+app.use(
+  "/api/v1/studentNeed",
+  require("./campaign creators,/models/studentNeed")
+);
+
 app.use("/api/v1/campaign", require("./Campaign/routers/CampaignRouters"));
 app.use("/api/v1/donation", require("./donation/routers/doantionRouters"));
 app.use("/api/v1/admin", require("./admin/routers/adminRouter"));

@@ -1,25 +1,7 @@
 const mongoose = require("mongoose");
 
-// Referral Schema
-const referralSchema = new mongoose.Schema(
+const ReferralSchema = new mongoose.Schema(
   {
-    referralCaseNumber: {
-      type: String,
-      unique: true,
-      required: [true, "Referral case number is required"],
-    },
-    referrerName: {
-      type: String,
-      required: [true, "Referrer's name is required"],
-    },
-    referrerEmail: {
-      type: String,
-      required: [true, "Referrer's email is required"],
-    },
-    referrerPhone: {
-      type: String,
-      required: [true, "Referrer's phone number is required"],
-    },
     studentName: {
       type: String,
       required: [true, "Student's name is required"],
@@ -29,36 +11,65 @@ const referralSchema = new mongoose.Schema(
     },
     studentPhone: {
       type: String,
+      required: [true, "Student's phone number is required"],
+    },
+    studentGuardianPhone: {
+      type: String,
     },
     studentAddress: {
       type: String,
+      required: [true, "Student's address is required"],
+    },
+    institution: {
+      type: String,
+      required: [true, "Institution name is required"],
+    },
+    universityYear: {
+      type: String,
+      required: true,
+    },
+    department: {
+      type: String,
+      required: true,
+    },
+    hasDisability: {
+      type: Boolean,
+      default: false,
+    },
+    disabilityDetails: {
+      type: String,
+      required: function () {
+        return this.hasDisability;
+      },
+    },
+    hasFamilySupport: {
+      type: Boolean,
+      default: false,
+    },
+    studentPictures: {
+      type: [String], // Array of image URLs
+      validate: {
+        validator: function (value) {
+          return value.length <= 3; // Limit to 3 images
+        },
+        message: "You can upload a maximum of 3 pictures.",
+      },
+    },
+    document: {
+      type: String, // Store the path of the uploaded document
     },
     needDescription: {
       type: String,
       required: [true, "Description of need is required"],
     },
-    documents: {
-      type: [String], // Array of strings to store document URLs or paths
-    },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Reference to the User model
-      required: [true, "A referral must be associated with a user"],
+    relationToStudent: {
+      type: String,
+      required: true,
+      enum: ["Teacher", "Parent", "Mentor", "Friend", "Other"],
     },
   },
   { timestamps: true }
 );
 
-// Pre-save hook to auto-generate a case number if not provided
-referralSchema.pre("save", function (next) {
-  if (!this.referralCaseNumber) {
-    const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate a random 6-digit number
-    this.referralCaseNumber = `RE${randomNumber}`;
-  }
-  next();
-});
-
-// Create and export the Referral model
-const Referral = mongoose.model("Referral", referralSchema);
-
+const Referral = mongoose.model("Referral", ReferralSchema);
 module.exports = Referral;

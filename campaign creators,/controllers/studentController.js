@@ -1,7 +1,7 @@
 const { validationResult } = require("express-validator");
 const AppError = require("../../ErrorHandlers/appError");
 const catchAsync = require("../../ErrorHandlers/catchAsync");
-const StudentInfo = require("../models/studentInfoModel"); // Assuming your model is named studentInfoModel
+const StudentInfo = require("../models/studentModel"); // Assuming your model is named studentInfoModel
 
 // Create a new student info entry
 exports.Create = catchAsync(async (req, res, next) => {

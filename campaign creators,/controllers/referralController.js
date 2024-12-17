@@ -1,51 +1,77 @@
 const { validationResult } = require("express-validator");
 const AppError = require("../../ErrorHandlers/appError");
 const catchAsync = require("../../ErrorHandlers/catchAsync");
-const Referral = require("../models/referralModel"); // Assuming you named the file referralModel.js
+const Referral = require("../models/referralModel");
+const User = require("../models/usermodel");
 
-// Create a new referral
+// Utility to filter only valid fields
+const filterFields = (obj, allowedFields) => {
+  const filtered = {};
+  Object.keys(obj).forEach((key) => {
+    if (allowedFields.includes(key)) {
+      filtered[key] = obj[key];
+    }
+  });
+  return filtered;
+};
+
 // Create a new referral
 exports.Create = catchAsync(async (req, res, next) => {
-  const {
-    referrerName,
-    referrerEmail,
-    referrerPhone,
-    studentName,
-    studentEmail,
-    studentPhone,
-    studentAddress,
-    needDescription,
-    documents,
-  } = req.body;
-
-  // Validate request data using express-validator
+  // Validate request data
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(new AppError("Validation failed", 400, errors.array()));
   }
 
-  // Ensure the user is authenticated and associate the referral with their ID
+  // Ensure user is logged in
   if (!req.user) {
     return next(
       new AppError("You must be logged in to create a referral.", 401)
     );
   }
 
-  // Create referral data object
+  // Fetch logged-in user's data
+  const loggedInUser = await User.findById(req.user._id);
+  if (!loggedInUser) {
+    return next(new AppError("User not found", 404));
+  }
+
+  // Extract referrer details from logged-in user
+  const referrerName = `${loggedInUser.firstName} ${loggedInUser.lastName}`;
+  const referrerEmail = loggedInUser.email?.address || loggedInUser.email; // Handle email as object or string
+  const referrerPhone = loggedInUser.phoneNumber;
+
+  // Define allowed fields in the Referral model
+  const allowedFields = [
+    "studentName",
+    "studentEmail",
+    "studentPhone",
+    "studentGuardianPhone",
+    "studentAddress",
+    "institution",
+    "universityYear",
+    "department",
+    "hasDisability",
+    "disabilityDetails",
+    "hasFamilySupport",
+    "studentPhotos",
+    "needDescription",
+    "relationToStudent",
+  ];
+
+  // Filter request body to include only allowed fields
+  const filteredBody = filterFields(req.body, allowedFields);
+
+  // Add referrer details and createdBy field
   const referralData = {
+    ...filteredBody,
     referrerName,
     referrerEmail,
     referrerPhone,
-    studentName,
-    studentEmail,
-    studentPhone,
-    studentAddress,
-    needDescription,
-    documents,
-    createdBy: req.user._id, // Associate the referral with the logged-in user's ID
+    createdBy: req.user._id,
   };
 
-  // Create the referral document in MongoDB
+  // Create the referral
   const newReferral = await Referral.create(referralData);
 
   res.status(201).json({
@@ -85,10 +111,9 @@ exports.ReadOne = catchAsync(async (req, res, next) => {
   });
 });
 
-// Update referral details
+// Update a referral by ID
 exports.Update = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const updateFields = req.body;
 
   // Validate request data using express-validator
   const errors = validationResult(req);
@@ -96,10 +121,31 @@ exports.Update = catchAsync(async (req, res, next) => {
     return next(new AppError("Validation failed", 400, errors.array()));
   }
 
-  // Find the referral by ID and update the specified fields
-  const updatedReferral = await Referral.findByIdAndUpdate(id, updateFields, {
-    new: true,
-    runValidators: true,
+  // Define allowed fields in the Referral model
+  const allowedFields = [
+    "studentName",
+    "studentEmail",
+    "studentPhone",
+    "studentGuardianPhone",
+    "studentAddress",
+    "institution",
+    "universityYear",
+    "department",
+    "hasDisability",
+    "disabilityDetails",
+    "hasFamilySupport",
+    "studentPhotos",
+    "needDescription",
+    "relationToStudent",
+  ];
+
+  // Filter request body to include only allowed fields
+  const filteredBody = filterFields(req.body, allowedFields);
+
+  // Update the referral document
+  const updatedReferral = await Referral.findByIdAndUpdate(id, filteredBody, {
+    new: true, // Return the updated document
+    runValidators: true, // Ensure validation rules are applied
   });
 
   if (!updatedReferral) {
@@ -116,14 +162,12 @@ exports.Update = catchAsync(async (req, res, next) => {
 
 // Delete a referral by ID
 exports.Delete = catchAsync(async (req, res, next) => {
-  // Find the referral by ID
   const referral = await Referral.findById(req.params.id);
 
   if (!referral) {
     return next(new AppError("Referral not found", 404));
   }
 
-  // Delete the referral
   await Referral.findByIdAndDelete(req.params.id);
 
   res.status(200).json({
